@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  c2-server:
+    build: .
+    container_name: hidden_tear_server
+    ports:
+      - "4782:4782"
+    restart: always
+    volumes:
+      # Persist the SQLite database
+      - ./logs.db:/app/logs.db

