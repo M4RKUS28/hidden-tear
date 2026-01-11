@@ -564,6 +564,7 @@
             <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">
                 Enter the administrator password to clear all infection logs. This action cannot be undone.
             </p>
+            <div id="modal-error" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; display: none;">Invalid password. Please try again.</div>
             <input type="password" id="admin-pwd" class="modal-input" placeholder="Enter password..." onkeydown="if(event.key==='Enter') submitClear()">
             <div class="modal-actions">
                 <button class="btn" onclick="closeModal()">Cancel</button>
@@ -720,8 +721,11 @@
         function promptClear() {
             const modal = document.getElementById('pwd-modal');
             const input = document.getElementById('admin-pwd');
-            modal.classList.add('open');
+            const error = document.getElementById('modal-error');
+            
+            error.style.display = 'none'; // Reset error
             input.value = '';
+            modal.classList.add('open');
             
             // Focus after transition
             setTimeout(() => input.focus(), 100);
@@ -733,9 +737,11 @@
 
         async function submitClear() {
             const password = document.getElementById('admin-pwd').value;
+            const error = document.getElementById('modal-error');
+            
             if (!password) return;
             
-            closeModal();
+            // Don't close modal yet
 
             try {
                 const res = await fetch('clear', {
@@ -745,15 +751,19 @@
                 });
 
                 if (res.ok) {
+                    closeModal();
                     // Force refresh
                     lastSignature = "";
                     fetchLogs();
-                    // Optional: Custom toast instead of alert could go here
                 } else {
-                    alert("Failed: Incorrect password.");
+                    // Show error in modal
+                    error.style.display = 'block';
+                    document.getElementById('admin-pwd').select(); // Select text for easy retry
                 }
             } catch (e) {
                 console.error(e);
+                error.textContent = "Connection error.";
+                error.style.display = 'block';
             }
         }
 
