@@ -14,13 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-
-# Create the main app instance
-app = FastAPI(
-    title="Digital Forensics Backend",
-    root_path="/hidden-tear",
-)
-
+from contextlib import asynccontextmanager
 
 DB_FILE = "data/logs.db"
 ADMIN_PASSWORD = "pass" # Change this as needed
@@ -41,8 +35,19 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Initialize DB on startup
-init_db()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle manager: Initialize DB on startup."""
+    init_db()
+    yield
+    # Clean up resources if needed (not needed for SQLite here)
+
+# Create the main app instance
+app = FastAPI(
+    title="Digital Forensics Backend",
+    root_path="/hidden-tear",
+    lifespan=lifespan
+)
 
 @app.get("/")
 async def root():
