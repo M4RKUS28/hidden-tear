@@ -9,4 +9,4 @@ services:
     restart: always
     volumes:
       # Persist the SQLite database
-      - ./logs.db:/app/logs.db
+      - ./data:/app/data

@@ -28,7 +28,10 @@ origins = [
     "*"
 ]
 
-DB_FILE = "logs.db"
+DB_FILE = "data/logs.db"
+
+# Ensure data directory exists
+os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 def init_db():
     """Initialize the database with the logs table."""
