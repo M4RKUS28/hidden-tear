@@ -111,7 +111,7 @@
             color: var(--text-main);
         }
 
-        /* Controls */
+        /* Search and Clear */
         .controls {
             margin-bottom: 1.5rem;
             display: flex;
@@ -119,7 +119,7 @@
         }
 
         .search-input {
-            width: 100%;
+            flex-grow: 1;
             background: var(--bg-card);
             border: 1px solid var(--border);
             color: var(--text-main);
@@ -133,6 +133,33 @@
         .search-input:focus {
             outline: none;
             border-color: var(--accent);
+        }
+
+        .btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem 1.2rem;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            border-color: var(--text-muted);
+            background: var(--bg-card-hover);
+        }
+
+        .btn-danger {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
         }
 
         /* Logs List */
@@ -270,6 +297,61 @@
             padding: 4rem;
             color: var(--text-muted);
         }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab-btn {
+            padding: 0.75rem 0.25rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--font-ui);
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* About Section */
+        .about-content {
+            color: var(--text-main);
+            line-height: 1.6;
+            max-width: 800px;
+        }
+        .about-content h2 { margin-top: 2rem; color: var(--accent); font-size: 1.25rem; }
+        .about-content h3 { color: #fff; font-size: 1.1rem; margin-top: 1.5rem; }
+        .about-content p { margin-bottom: 1rem; color: #d4d4d8; }
+        .about-content ul { padding-left: 1.5rem; color: #a1a1aa; }
+        .about-content li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body>
@@ -287,30 +369,77 @@
             </div>
         </header>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-label">Total Infections</span>
-                <span class="stat-value" id="stat-total">0</span>
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" onclick="switchTab('logs')">Live Logs</button>
+            <button class="tab-btn" onclick="switchTab('about')">About Case Study</button>
+        </nav>
+
+        <!-- Tab: Logs -->
+        <div id="tab-logs" class="tab-content active">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Total Infections</span>
+                    <span class="stat-value" id="stat-total">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Unique Victims (IP)</span>
+                    <span class="stat-value" id="stat-unique">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Last Activity</span>
+                    <span class="stat-value" id="stat-last" style="font-size: 1.2rem; margin-top: auto;">-</span>
+                </div>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Unique Victims (IP)</span>
-                <span class="stat-value" id="stat-unique">0</span>
+
+            <!-- Search -->
+            <div class="controls">
+                <input type="text" class="search-input" id="search-input" placeholder="Search IP, Info, ID..." oninput="handleSearch()">
+                <button class="btn btn-danger" onclick="promptClear()">Clear Logs</button>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Last Activity</span>
-                <span class="stat-value" id="stat-last" style="font-size: 1.2rem; margin-top: auto;">-</span>
+
+            <!-- List -->
+            <div id="logs-list" class="logs-list">
+                <div class="loading">Connecting to C2 server...</div>
             </div>
         </div>
 
-        <!-- Search -->
-        <div class="controls">
-            <input type="text" class="search-input" id="search-input" placeholder="Search IP, Info, ID..." oninput="handleSearch()">
-        </div>
+        <!-- Tab: About -->
+        <div id="tab-about" class="tab-content">
+            <div class="about-content">
+                <h1 style="border:none; margin:0 0 1rem 0;">Forensics-Analysis for Windows based Ransomware Attacks</h1>
+                <p>
+                    This dashboard is part of a student research project and case study. It demonstrates the Command & Control (C2) 
+                    infrastructure of a simulated ransomware attack for educational and analytical purposes.
+                </p>
 
-        <!-- List -->
-        <div id="logs-list" class="logs-list">
-            <div class="loading">Connecting to C2 server...</div>
+                <h2>Theory</h2>
+                <h3>Ransomware Lifecycle</h3>
+                <p>Understanding the standard phases of an attack:</p>
+                <ul>
+                    <li><strong>Distribution:</strong> Delivery via phishing, exploit kits, or RDP.</li>
+                    <li><strong>Infection:</strong> Execution and persistence mechanisms.</li>
+                    <li><strong>Communication:</strong> C2 contact for key exchange (simulated here).</li>
+                    <li><strong>Encryption:</strong> File locking and key generation.</li>
+                    <li><strong>Extortion:</strong> Ransom note display and payment demand.</li>
+                </ul>
+
+                <h3>Methods for Ransomware Analysis</h3>
+                <ul>
+                    <li><strong>Static Analysis:</strong> Examining code without execution (Decompilation, signature matching).</li>
+                    <li><strong>Dynamic Analysis:</strong> Running malware in a sandbox to observe behavior.</li>
+                    <li><strong>Memory Forensics:</strong> Extracting keys or artifacts from RAM.</li>
+                </ul>
+
+                <h2>Implementation: Case Study</h2>
+                <p>This project demonstrates a complete attack and defense cycle:</p>
+                <ul>
+                    <li><strong>Image Copy Process:</strong> Creating forensic images of infected systems.</li>
+                    <li><strong>Detection:</strong> Identifying network beacons (this dashboard) and file system anomalies.</li>
+                    <li><strong>Behavior Analysis:</strong> Observing the "Hidden Tear" variant in a controlled environment.</li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -318,6 +447,16 @@
         let allLogs = [];
         let lastSignature = "";
         let isFirstLoad = true;
+
+        function switchTab(tabName) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
 
         async function fetchLogs() {
             try {
@@ -447,6 +586,31 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        async function promptClear() {
+            const password = prompt("Enter admin password to clear all logs:");
+            if (!password) return;
+
+            try {
+                const res = await fetch('clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password})
+                });
+
+                if (res.ok) {
+                    // Force refresh
+                    lastSignature = "";
+                    fetchLogs();
+                    alert("Logs cleared successfully.");
+                } else {
+                    alert("Failed: Incorrect password.");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error connecting to server.");
+            }
         }
 
         // Init

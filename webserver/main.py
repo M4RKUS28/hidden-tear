@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 # Create the main app instance
@@ -21,14 +21,9 @@ app = FastAPI(
     root_path="/hidden-tear",
 )
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8127",
-    "*"
-]
 
 DB_FILE = "data/logs.db"
+ADMIN_PASSWORD = "pass" # Change this as needed
 
 # Ensure data directory exists
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
@@ -79,5 +74,24 @@ async def get_logs():
     conn.close()
     
     return [dict(row) for row in rows]
+
+@app.post("/clear")
+async def clear_logs(request: Request):
+    """Clear all logs if the correct password is provided."""
+    body = await request.json()
+    password = body.get("password")
+    
+    if password != ADMIN_PASSWORD:
+        return JSONResponse(status_code=403, content={"error": "Invalid password"})
+
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("DELETE FROM logs")
+    # Reset Auto Increment
+    c.execute("DELETE FROM sqlite_sequence WHERE name='logs'")
+    conn.commit()
+    conn.close()
+    
+    return {"status": "cleared"}
 
 
